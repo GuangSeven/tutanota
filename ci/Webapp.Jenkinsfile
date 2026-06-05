@@ -1,0 +1,129 @@
+pipeline {
+    environment {
+        PATH="${env.NODE_PATH}:${env.PATH}:/home/jenkins/emsdk/upstream/bin/:/home/jenkins/emsdk/:/home/jenkins/emsdk/upstream/emscripten"
+        WASM_TOOLS_FILE_PATH="tuta-wasm-tools.deb"
+    }
+	options {
+		preserveStashes()
+	}
+	parameters {
+        booleanParam(
+			name: 'UPLOAD',
+			defaultValue: false,
+			description: "Upload release version to Nexus"
+		)
+        string(
+            name: 'branch',
+            defaultValue: "*/master",
+            description: "the branch to build the release from."
+        )
+        string(
+            name: 'wasmToolsVersion',
+            defaultValue: "0.0.4",
+            description: "the version of tuta-wasm-tools to use for building the app (see Nexus)"
+        )
+    }
+    agent {
+        label 'master'
+    }
+    stages {
+        stage('Check Github') {
+            steps {
+                script {
+                    def util = load "ci/jenkins-lib/util.groovy"
+                    util.checkGithub()
+                }
+            }
+        }
+        stage('download tuta wasm tools') {
+            steps {
+                script {
+                    def util = load "ci/jenkins-lib/util.groovy"
+                    util.downloadFromNexus(groupId: "lib",
+                                           artifactId: "tuta-wasm-tools",
+                                           version: params.wasmToolsVersion,
+                                           fileExtension: 'deb',
+                                           outFile: "${env.WORKSPACE}/ci/containers/${env.WASM_TOOLS_FILE_PATH}")
+                }
+            }
+        }
+        stage('Build') {
+			agent {
+				dockerfile {
+					filename 'linux-build.dockerfile'
+					label 'master'
+					dir 'ci/containers'
+					additionalBuildArgs '--format docker'
+					args "--network host -v /run:/run:rw,z -v /opt/repository:/opt/repository:rw,z"
+					reuseNode true
+				} // docker
+		    }
+
+            steps {
+                sh 'npm -v'
+                sh 'node -v'
+
+            	sh 'npm ci'
+				sh 'node webapp.js release'
+
+			    script {
+                    if (params.UPLOAD) {
+                        // excluding web-specific and mobile specific parts which we don't need in desktop
+                        stash includes: 'build/**', excludes: '**/app.html, **/desktop.html, **/index-app.js, **/index-desktop.js', name: 'webapp_built'
+                    }
+			    }
+
+				// Bundle size stats
+				publishHTML target: [
+					allowMissing: false,
+					alwaysLinkToLastBuild: false,
+					keepAll: true,
+					reportDir: 'build',
+					reportFiles: 'stats.html',
+					reportName: 'bundle stats'
+				]
+				// Bundle dependencies graph
+				sh 'dot -Tsvg build/bundles.dot > build/bundles.svg'
+				sh """echo '<!doctype html><html><body><img src="./bundles.svg" /></body></html>' > build/bundles.html"""
+				publishHTML target: [
+					allowMissing: false,
+					alwaysLinkToLastBuild: false,
+					keepAll: true,
+					reportDir: 'build',
+					reportFiles: 'bundles.html',
+					reportName: 'bundle dependencies'
+				]
+            }
+        } // stage build
+
+        stage('Upload to Nexus') {
+            when {
+            	expression { return params.UPLOAD }
+            }
+        	environment {
+         		VERSION = sh(returnStdout: true, script: "node -p -e \"require('./package.json').version\" | tr -d \"\n\"")
+         	}
+            agent {
+                label 'linux'
+            }
+            steps {
+            	sh 'echo Uploading version $VERSION'
+				sh 'rm -rf ./build/*'
+				unstash 'webapp_built'
+                sh 'tar -cvzf webapp_built.tar.gz ./build'
+
+                script {
+                    def util = load "ci/jenkins-lib/util.groovy"
+
+                    util.publishToNexus(
+                            groupId: "app",
+                            artifactId: "webapp",
+                            version: "${VERSION}",
+                            assetFilePath: "${WORKSPACE}/webapp_built.tar.gz",
+                            fileExtension: "tar.gz"
+                    )
+                }
+            } // steps
+        } // stage upload to nexus
+    } // stages
+} // pipeline

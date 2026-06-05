@@ -1,0 +1,15 @@
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\bin\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.deps.json
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\bin\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.dll
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\bin\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.pdb
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\bin\Debug\net8.0-windows10.0.19041.0\Tuta.Core.dll
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\bin\Debug\net8.0-windows10.0.19041.0\Tuta.Core.pdb
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.csproj.AssemblyReference.cache
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.AssemblyInfoInputs.cache
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.AssemblyInfo.cs
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.csproj.CoreCompileInputs.cache
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Inf.DA52CF21.Up2Date
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.dll
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\refint\Tuta.Infrastructure.dll
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\Tuta.Infrastructure.pdb
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Infrastructure\obj\Debug\net8.0-windows10.0.19041.0\ref\Tuta.Infrastructure.dll

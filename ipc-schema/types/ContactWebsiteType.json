@@ -1,0 +1,8 @@
+{
+	"name": "ContactWebsiteType",
+	"type": "typeref",
+	"location": {
+		"typescript": "@tutao/entities/tutanota",
+		"kotlin": "de.tutao.tutashared.contacts.ContactWebsiteType"
+	}
+}

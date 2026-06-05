@@ -1,0 +1,13 @@
+entities/
+translations/
+node_modules/
+build/
+build-calendar-app/
+build-drive-app/
+libs/
+app-android/
+app-ios/
+fdroid-metadata-workaround/
+src/platform-kit/crypto/crypto-primitives/
+target/
+src/app-kit/mimimi/tests

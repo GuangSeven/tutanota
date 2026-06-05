@@ -1,0 +1,77 @@
+import { ResolvableRecipient } from "../../../src/applications/common/api/main/RecipientsModel.js"
+import { LazyLoaded } from "../../../src/platform-kit/utils"
+import { createNewContact, isTutaMailAddress } from "../../../src/applications/common/mailFunctionality/SharedMailUtils.js"
+import { PresentableKeyVerificationState } from "../../../src/platform-kit/app-env"
+import { Contact } from "@tutao/entities/tutanota"
+import { User } from "@tutao/entities/sys"
+import { Recipient, RecipientType } from "../../../src/entities/tutanota/Utils"
+
+/**
+ * Creating actual ResolvableRecipients is annoying because you have to mock a bunch of stuff in other model classes
+ */
+export class ResolvableRecipientMock implements ResolvableRecipient {
+	public name: string
+	public type: RecipientType
+	public verificationState: PresentableKeyVerificationState
+
+	private _resolved = false
+	private lazyResolve = new LazyLoaded<Recipient>(async () => {
+		this._resolved = true
+		this.type =
+			this.type !== RecipientType.UNKNOWN ? this.type : this.internalAddresses.includes(this.address) ? RecipientType.INTERNAL : RecipientType.EXTERNAL
+		this.contact =
+			this.contact ??
+			this.existingContacts.find(({ mailAddresses }) => mailAddresses.some(({ address }) => address === this.address)) ??
+			createNewContact(this.user, this.address, this.name)
+
+		return {
+			address: this.address,
+			name: this.name,
+			contact: this.contact,
+			type: this.type,
+			verificationState: PresentableKeyVerificationState.NONE,
+		}
+	})
+
+	constructor(
+		public address: string,
+		name: string | null,
+		public contact: Contact | null,
+		type: RecipientType | null,
+		/** non-tutanota addresses that should resolve to be INTERNAL */
+		private internalAddresses: string[],
+		/** contacts that should be resolved as though they were found by the contact model */
+		private existingContacts: Contact[],
+		private user: User,
+	) {
+		this.name = name ?? ""
+		this.type = type ?? (isTutaMailAddress(address) ? RecipientType.INTERNAL : RecipientType.UNKNOWN)
+	}
+
+	markAsKeyVerificationMismatch(): Promise<void> {
+		// noop in mock implementation
+		return Promise.resolve()
+	}
+
+	isResolved(): boolean {
+		return this._resolved
+	}
+
+	resolve(): Promise<Recipient> {
+		return this.lazyResolve.getAsync()
+	}
+
+	setContact(contact: Contact): void {
+		this.contact = contact
+	}
+
+	setName(name: string): void {
+		this.name = name
+	}
+
+	whenResolved(onResolved: (resolvedRecipient: Recipient) => void): this {
+		throw new Error("STUB")
+	}
+
+	reset(): void {}
+}

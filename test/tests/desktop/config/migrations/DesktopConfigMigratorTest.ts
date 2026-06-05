@@ -1,0 +1,94 @@
+import o from "@tutao/otest"
+import { DesktopConfigMigrator } from "../../../../../src/applications/common/desktop/config/migrations/DesktopConfigMigrator.js"
+import { DesktopNativeCryptoFacade } from "../../../../../src/applications/common/desktop/DesktopNativeCryptoFacade.js"
+import { downcast } from "../../../../../src/platform-kit/utils"
+import { makeKeyStoreFacade } from "../../../TestUtils.js"
+import { DesktopKeyStoreFacade } from "../../../../../src/applications/common/desktop/DesktopKeyStoreFacade.js"
+import { DesktopConfigKey } from "../../../../../src/platform-kit/app-env/ConfigKeys.js"
+import { aes256RandomKey } from "../../../../../src/platform-kit/crypto"
+
+o.spec("DesktopConfigMigrator", function () {
+	let migrator
+	let crypto: DesktopNativeCryptoFacade
+	let keyStoreFacade: DesktopKeyStoreFacade
+	const key = aes256RandomKey()
+
+	o.before(function () {
+		crypto = downcast({
+			aesEncryptObject: (encryptionKey, object) => {
+				return JSON.stringify(object)
+			},
+		})
+
+		const electron = downcast({
+			session: {
+				defaultSession: {
+					getSpellCheckerLanguages: () => ["de-DE"],
+				},
+			},
+		})
+
+		keyStoreFacade = makeKeyStoreFacade(key)
+		migrator = new DesktopConfigMigrator(crypto, keyStoreFacade, electron)
+	})
+	o("migrations result in correct default config, client", async function () {
+		const oldConfig = {
+			heartbeatTimeoutInSeconds: 30,
+			defaultDownloadPath: null,
+			enableAutoUpdate: true,
+			runAsTrayApp: true,
+			desktopConfigVersion: 1,
+			showAutoUpdateOption: true,
+			pushIdentifier: {
+				identifier: "some identifier",
+				sseOrigin: "some orign",
+				userIds: ["userId1", "userId2"],
+			},
+		}
+
+		const requiredResult = {
+			heartbeatTimeoutInSeconds: 30,
+			defaultDownloadPath: null,
+			enableAutoUpdate: true,
+			runAsTrayApp: true,
+			desktopConfigVersion: 10,
+			showAutoUpdateOption: true,
+			spellcheck: "de-DE",
+			offlineStorageEnabled: false,
+			mailExportMode: "eml",
+			sseInfo: JSON.stringify(oldConfig.pushIdentifier),
+			lastBounds: {
+				rect: { x: 200, y: 200, width: 1200, height: 700 },
+				fullscreen: false,
+				scale: 1,
+			},
+			appPassSalt: null,
+			[DesktopConfigKey.mailboxExportState]: {},
+			scheduledAlarms: [],
+		}
+
+		o(await migrator.applyMigrations("migrateClient", oldConfig)).deepEquals(requiredResult)
+	})
+
+	o("migrations result in correct default config, admin", async function () {
+		const oldConfig = {
+			runAsTrayApp: true,
+		}
+		const requiredResult = {
+			appPassSalt: null,
+			runAsTrayApp: true,
+			desktopConfigVersion: 10,
+			showAutoUpdateOption: true,
+			mailExportMode: "eml",
+			spellcheck: "",
+			offlineStorageEnabled: false,
+			lastBounds: {
+				rect: { x: 200, y: 200, width: 1200, height: 700 },
+				fullscreen: false,
+				scale: 1,
+			},
+		}
+
+		o(await migrator.applyMigrations("migrateAdmin", oldConfig)).deepEquals(requiredResult)
+	})
+})

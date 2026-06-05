@@ -1,0 +1,18 @@
+{
+	"extends": "./tsconfig_common.json",
+	"compilerOptions": {
+		"composite": true,
+		"removeComments": false,
+		"declaration": true,
+		"outDir": "build",
+		"rootDir": ".",
+		"noEmit": false
+	},
+	"files": [],
+	"exclude": ["build"],
+	"references": [
+		{
+			"path": "src/applications/tsconfig.combined-apps.json"
+		}
+	]
+}

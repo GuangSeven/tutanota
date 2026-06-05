@@ -1,0 +1,9 @@
+[submodule "libs/webassembly/phc-winner-argon2"]
+	path = libs/webassembly/phc-winner-argon2
+	url = https://github.com/P-H-C/phc-winner-argon2
+[submodule "libs/webassembly/liboqs"]
+	path = libs/webassembly/liboqs
+	url = https://github.com/open-quantum-safe/liboqs
+[submodule "libs/Signal-FTS5-Extension"]
+	path = libs/Signal-FTS5-Extension
+	url = https://github.com/tutao/Signal-FTS5-Extension

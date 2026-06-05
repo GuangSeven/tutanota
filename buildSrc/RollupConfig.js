@@ -1,0 +1,567 @@
+import path from "node:path"
+
+/**
+ * These are the vendored dependencies. This map is to help bundler find the resolved path.
+ * Must stay in sync with ./updateLibs.js
+ */
+export const dependencyMap = {
+	mithril: path.normalize("./libs/mithril.js"),
+	"mithril/stream": path.normalize("./libs/stream.js"),
+	"squire-rte": path.normalize("./libs/squire-raw.mjs"),
+	dompurify: path.normalize("./libs/purify.js"),
+	"qrcode-svg": path.normalize("./libs/qrcode.js"),
+	jszip: path.normalize("./libs/jszip.js"),
+	luxon: path.normalize("./libs/luxon.js"),
+	linkifyjs: path.normalize("./libs/linkify.js"),
+	"linkify-html": path.normalize("./libs/linkify-html.js"),
+	cborg: path.normalize("./libs/cborg.js"),
+	// below this, the modules are only running in the desktop main thread.
+	"electron-updater": path.normalize("./libs/electron-updater.mjs"),
+	undici: path.normalize("./libs/undici.mjs"),
+	jsqr: path.normalize("./libs/jsQR.js"),
+	"@signalapp/sqlcipher": path.normalize("./libs/node-sqlcipher.mjs"),
+	"@fingerprintjs/botd": path.normalize("./libs/botd.mjs"),
+	"./tensorflow-custom": path.normalize("./libs/tensorflow.js"),
+}
+
+export let tsImportAliases = {
+	"@tutao/utils": path.normalize("build/utils/index.js"),
+	"@tutao/crypto": path.normalize("build/crypto/index.js"),
+	"@tutao/crypto/error": path.normalize("build/crypto/error.js"),
+	"@tutao/usagetests": path.normalize("build/usagetests/index.js"),
+	"@tutao/mimimi": path.normalize("build/mimimi/binding.js"),
+	"@tutao/rest-client": path.normalize("build/rest-client/index.js"),
+	"@tutao/rest-client/error": path.normalize("build/rest-client/error.js"),
+	"@tutao/app-env": path.normalize("build/app-env/index.js"),
+	"@tutao/typerefs": path.normalize("build/meta/index.js"),
+	"@tutao/instance-pipeline": path.normalize("build/instance-pipeline/index.js"),
+	"@tutao/native-bridge/common": path.normalize("build/native-bridge/common/index.js"),
+	"@tutao/native-bridge/worker": path.normalize("build/native-bridge/worker/index.js"),
+	"@tutao/native-bridge/main": path.normalize("build/native-bridge/main/index.js"),
+	"@tutao/native-bridge/shared": path.normalize("build/native-bridge/shared/index.js"),
+	"@tutao/native-bridge/generatedIpc/types": path.normalize("build/native-bridge/common/generatedipc/types/index.js"),
+	"@tutao/local-store": path.normalize("build/local-store/index.js"),
+	"@tutao/network": path.normalize("build/network/index.js"),
+}
+
+/**
+ * These are the definitions of chunks with static dependencies. Key is the chunk and values are dependencies to other chunks
+ */
+export const allowedImports = {
+	"polyfill-helpers": [],
+	"wasm-fallback": [],
+	wasm: ["wasm-fallback"],
+	"common-min": ["polyfill-helpers"],
+	boot: ["polyfill-helpers", "common-min", "common"],
+	common: ["polyfill-helpers", "common-min"],
+	"gui-base": ["polyfill-helpers", "common-min", "common", "boot"],
+	main: ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "date", "qr"],
+	sanitizer: ["polyfill-helpers", "common-min", "common", "boot", "gui-base"],
+	date: ["polyfill-helpers", "common-min", "common"],
+	"date-gui": ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "sharing", "date", "contacts", "ui-extra"],
+	"mail-view": ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "ui-extra"],
+	"mail-editor": ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "mail-view", "sanitizer", "sharing", "date-gui"],
+	search: ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "mail-view", "calendar-view", "contacts", "date", "date-gui", "sharing"],
+	// ContactMergeView needs HtmlEditor even though ContactEditor doesn't?
+	contacts: ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "mail-view", "date", "date-gui", "mail-editor"],
+	"calendar-view": ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "date", "date-gui", "sharing", "contacts"],
+	login: ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main"],
+	signup: ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "settings", "login"],
+	"spam-classifier": ["polyfill-helpers", "common", "common-min"],
+	worker: ["polyfill-helpers", "common-min", "common", "native-common", "native-worker", "wasm", "wasm-fallback"],
+	"pow-worker": [],
+	settings: [
+		"polyfill-helpers",
+		"common-min",
+		"common",
+		"boot",
+		"gui-base",
+		"main",
+		"contacts",
+		"sanitizer",
+		"mail-editor",
+		"mail-view",
+		"date",
+		"date-gui",
+		"login",
+		"sharing",
+		"qr",
+	],
+	"mail-settings": [
+		"polyfill-helpers",
+		"common-min",
+		"common",
+		"boot",
+		"gui-base",
+		"main",
+		"contacts",
+		"sanitizer",
+		"mail-editor",
+		"mail-view",
+		"date",
+		"date-gui",
+		"login",
+		"sharing",
+		"settings",
+		"native-main",
+		"ui-extra",
+	],
+	"calendar-settings": [
+		"polyfill-helpers",
+		"common-min",
+		"common",
+		"boot",
+		"gui-base",
+		"main",
+		"contacts",
+		"sanitizer",
+		"mail-editor",
+		"mail-view",
+		"date",
+		"date-gui",
+		"login",
+		"sharing",
+		"settings",
+		"ui-extra",
+	],
+	"drive-settings": [
+		"polyfill-helpers",
+		"common-min",
+		"common",
+		"boot",
+		"gui-base",
+		"main",
+		"sanitizer",
+		"date",
+		"date-gui",
+		"login",
+		"sharing",
+		"settings",
+		"ui-extra",
+	],
+	"ui-extra": [
+		"polyfill-helpers",
+		"common-min",
+		"common",
+		"boot",
+		"gui-base",
+		"main",
+		"settings",
+		"mail-settings",
+		"calendar-settings",
+		"contacts",
+		"sanitizer",
+		"login",
+		"mail-editor",
+	],
+	sharing: ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main"],
+	"native-common": ["polyfill-helpers", "common-min", "common"],
+	"native-main": ["polyfill-helpers", "common-min", "common", "boot", "gui-base", "main", "native-common", "login"],
+	"native-worker": ["polyfill-helpers", "common-min", "common"],
+	"setup-wizard": [
+		"boot",
+		"common-min",
+		"gui-base",
+		"main",
+		"native-common",
+		"native-main",
+		"settings",
+		"mail-settings",
+		"calendar-settings",
+		"ui-extra",
+		"ui",
+	],
+	jszip: ["polyfill-helpers"],
+	"worker-lazy": ["common-min", "common", "worker", "worker-search", "date"],
+	"worker-search": ["common-min", "common", "worker", "worker-lazy"],
+	linkify: [],
+	qr: ["polyfill-helpers"],
+	pdf: ["common-min", "qr"],
+	"material-color-utilities": [],
+	drive: ["common-min", "common", "boot", "gui-base", "main"],
+}
+
+/** resolves certain imports to vendored libraries for the dist build */
+export function resolveLibs(baseDir = ".", extraDependenciesMap = {}) {
+	return {
+		name: "resolve-libs",
+		resolveId(source) {
+			const value = dependencyMap[source] ?? tsImportAliases[source] ?? extraDependenciesMap[source]
+			if (!value) return null
+			const id = path.join(baseDir, value)
+			return { id, resolvedBy: this.name }
+		},
+	}
+}
+
+export function esBuildResolveLibs(baseDir = ".", extraDependenciesMap = {}) {
+	return {
+		name: "resolve-libs",
+
+		setup(build) {
+			build.onResolve({ filter: /^[^./]/ }, (args) => {
+				const value = dependencyMap[args.path] ?? extraDependenciesMap[args.path]
+
+				if (!value) return
+
+				return {
+					path: path.resolve(path.join(baseDir, value)),
+				}
+			})
+		},
+	}
+}
+
+/**
+ * Returns the chunk name for the given moduleId which is usually the file path.
+ * @param moduleId Rollup moduleId usually the file path.
+ * @param getModuleInfo Helper function to get information about the ES module.
+ * @returns {string} Chunk name
+ */
+export function getChunkName(moduleId, { getModuleInfo }) {
+	// See HACKING.md for rules
+	const moduleInfo = getModuleInfo(moduleId)
+	const code = moduleInfo.code
+	if (code == null) {
+		console.log("SYNTHETIC MODULE??", moduleId)
+	}
+
+	function isIn(subpath) {
+		return moduleId.includes(path.normalize(subpath))
+	}
+
+	if (isIn("src/platform-kit/app-env/boot")) {
+		return "boot"
+	} else if (code.includes("@bundleInto:common-min") || isIn("libs/stream") || isIn("src/platform-kit/app-env")) {
+		// if detecting this does not work even though the comment is there, add a blank line after the annotation.
+		return "common-min"
+	} else if (code.includes("@bundleInto:common")) {
+		// if detecting this does not work even though the comment is there, add a blank line after the annotation.
+		return "common"
+	} else if (isIn("src/applications/common/contactsFunctionality") || isIn("src/applications/common/mailFunctionality")) {
+		return "main"
+	} else if (
+		code.includes("assertMainOrNodeBoot") ||
+		isIn("libs/mithril") ||
+		isIn("src/applications/mail-app/app.ts") ||
+		isIn("src/applications/calendar-app/calendar-app.ts") ||
+		code.includes("@bundleInto:boot") ||
+		moduleId.includes("libs/botd.mjs")
+	) {
+		// if detecting this does not work even though the comment is there, add a blank line after the annotation.
+		// everything marked as assertMainOrNodeBoot goes into boot bundle right now
+		// (which is getting merged into app.js)
+		return "boot"
+	} else if (
+		isIn("src/applications/calendar-app/calendar/export") ||
+		isIn("src/applications/common/misc/DateParser") ||
+		isIn("src/applications/common/misc/ElevenYearsTutaUtils") ||
+		isIn("src/applications/calendar-app/calendar/model") ||
+		isIn("src/applications/calendar-app/calendar/gui") ||
+		isIn("src/applications/common/calendar/gui") ||
+		isIn("src/applications/mail-app/gui/date")
+	) {
+		// this contains code that is important to the calendar view but might be used by other parts of the app on the main thread
+		// like time-based input components and formatting code.
+		return "date-gui"
+	} else if (moduleId.includes("luxon") || isIn("src/applications/common/calendar/date")) {
+		// common calendar/time code that might be used in main or worker threads
+		// primarily luxon and utility functions based on it, but no display code
+		// (formatting, UI components)
+		return "date"
+	} else if (isIn("src/applications/common/misc/HtmlSanitizer") || isIn("libs/purify")) {
+		return "sanitizer"
+	} else if (isIn("src/applications/common/gui/base")) {
+		// these gui elements are used from everywhere
+		return "gui-base"
+	} else if (isIn("src/applications/common/gui/CountryList.ts")) {
+		return "common"
+	} else if (isIn("src/applications/common/native/wizard")) {
+		return "setup-wizard"
+	} else if (isIn("src/applications/common/native") || isIn("src/applications/mail-app/native/main") || moduleId.includes("SearchInPageOverlay")) {
+		return "native-main"
+	} else if (
+		isIn("src/applications/mail-app/mail/editor") ||
+		moduleId.includes("squire") ||
+		isIn("src/ui/editor") ||
+		isIn("src/applications/mail-app/mail/signature") ||
+		isIn("src/applications/mail-app/templates") ||
+		isIn("src/applications/mail-app/knowledgebase") ||
+		isIn("src/applications/mail-app/mail/press")
+	) {
+		// squire is most often used with mail editor, and they are both not too big so we merge them
+		return "mail-editor"
+	} else if (
+		isIn("src/applications/common/api/main") ||
+		isIn("src/applications/mail-app/mail/model") ||
+		isIn("src/applications/mail-app/contacts/model") ||
+		isIn("src/applications/mail-app/search/model") ||
+		isIn("src/applications/calendar-app/calendar/search/model") ||
+		isIn("src/applications/common/misc") ||
+		isIn("src/applications/common/file") ||
+		isIn("src/applications/common/gui") ||
+		isIn("src/applications/common/offline") ||
+		isIn("src/applications/common/serviceworker") ||
+		isIn("src/ui/utils/ClipboardUtils.ts") ||
+		moduleId.includes(path.normalize("src/usagetests")) ||
+		moduleId.includes("NotificationContentSelector") ||
+		moduleId.includes("NotificationPermissionsDialog") ||
+		moduleId.includes("SettingsBannerButton")
+	) {
+		// Things which we always need for main thread anyway, at least currently
+		return "main"
+	} else if (isIn("src/applications/mail-app/mail/view") || isIn("src/applications/mail-app/mail/export")) {
+		return "mail-view"
+	} else if (isIn("src/applications/mail-app/workerUtils/spamClassification") || moduleId.includes("libs/tensorflow.js")) {
+		return "spam-classifier"
+	} else if (
+		isIn("src/applications/mail-app/workerUtils/worker") ||
+		isIn("src/applications/calendar-app/worker") ||
+		isIn("src/applications/mail-app/workerUtils/offline") ||
+		isIn("src/applications/drive-app/workerUtils")
+	) {
+		return "worker"
+	} else if (moduleId.includes("pow-worker") || moduleId.includes("ProofOfWorkCaptchaUtils")) {
+		return "pow-worker"
+	} else if (isIn(`src/applications/mail-app/search`) || isIn(`src/applications/calendar-app/calendar/search`) || isIn("src/applications/common/search")) {
+		return "search"
+	} else if (isIn("src/applications/calendar-app/calendar/view")) {
+		return "calendar-view"
+	} else if (isIn("src/applications/mail-app/contacts")) {
+		return "contacts"
+	} else if (isIn("src/applications/common/login/recover") || isIn("src/applications/common/support") || isIn("src/applications/common/login/contactform")) {
+		// Collection of small UI components which are used not too often
+		// Perhaps contact form should be separate
+		// Recover things depends on HtmlEditor which we don't want to load on each login
+		return "ui-extra"
+	} else if (isIn("src/applications/common/signup")) {
+		return "signup"
+	} else if (isIn("src/applications/common/login")) {
+		return "login"
+	} else if (
+		isIn("src/applications/common/api/common") ||
+		isIn("src/desktop/config/ConfigKeys") ||
+		isIn("src/applications/common/desktop/") ||
+		moduleId.includes("cborg") ||
+		// CryptoError is needed on the main thread in order to check errors
+		// We have to define both the entry point and the files referenced from it which is annoying
+		isIn("src/platform-kit/crypto/error") ||
+		isIn("src/platform-kit/crypto/misc/CryptoError")
+	) {
+		// things that are used in both worker and client
+		// entities could be separate in theory but in practice they are anyway
+		return "common"
+	} else if (
+		moduleId.includes("rollupPluginBabelHelpers") ||
+		moduleId.includes("commonjsHelpers") ||
+		moduleId.includes("tslib") ||
+		moduleId.includes("commonjs-dynamic-modules")
+	) {
+		return "polyfill-helpers"
+	} else if (
+		isIn("src/applications/common/settings") ||
+		isIn("src/applications/common/subscription") ||
+		isIn("src/applications/common/ratings") ||
+		isIn("src/applications/common/termination") ||
+		isIn("src/applications/common/partner")
+	) {
+		// subscription and settings depend on each other right now.
+		// subscription is also a kitchen sink with signup, utils and views, we should break it up
+		return "settings"
+	} else if (isIn("src/applications/mail-app/settings")) {
+		return "mail-settings"
+	} else if (isIn("src/applications/calendar-app/calendar/settings")) {
+		return "calendar-settings"
+	} else if (isIn("src/applications/drive-app/settings")) {
+		return "drive-settings"
+	} else if (isIn("src/applications/common/sharing")) {
+		return "sharing"
+	} else if (isIn("src/applications/common/api/worker/facades/lazy")) {
+		// things that are not used for login and are generally accessed occasionally
+		return "worker-lazy"
+	} else if (isIn("src/applications/common/api/worker/search") || isIn("src/applications/mail-app/workerUtils/index")) {
+		// things related to indexer or search
+		return "worker-search"
+	} else if (isIn("src/applications/common/api/worker/Urlifier") || isIn("libs/linkify") || isIn("libs/linkify-html")) {
+		return "linkify"
+	} else if (
+		isIn("src/applications/common/api/worker/pdf") ||
+		isIn("src/applications/common/api/worker/invoicegen") ||
+		isIn("src/applications/common/api/worker/recoveryDocumentGenerator")
+	) {
+		return "pdf"
+	} else if (isIn("src/applications/common/api/worker/utils")) {
+		return "common"
+	} else if (isIn("src/applications/common/api/worker") || moduleId.includes("argon2")) {
+		return "worker" // avoid that crypto stuff is only put into native
+	} else if (isIn("libs/jszip")) {
+		return "jszip"
+	} else if (isIn("node_modules/@material/material-color-utilities")) {
+		return "material-color-utilities"
+	} else if (isIn("libs/jsQR") || isIn("libs/qrcode")) {
+		return "qr"
+	} else if (isIn("src/applications/drive-app")) {
+		return "drive"
+	} else if (isIn("src/platform-kit/utils")) {
+		return "common-min"
+	} else if (
+		isIn("src/platform-kit/meta") ||
+		isIn("src/platform-kit/rest-client/error.ts") ||
+		isIn("src/platform-kit/instance-pipeline/utils") ||
+		isIn("src/ui/utils") ||
+		isIn("src/platform-kit/base/crypto/Constants.ts") ||
+		isIn("src/platform-kit/crypto/CryptoTypes.ts") ||
+		isIn("src/platform-kit/network/GroupUtils.ts") ||
+		isIn("src/platform-kit/network/EntityClient.ts") ||
+		isIn("src/platform-kit/network/ProgressMonitorInterface.ts") ||
+		isIn("src/app-kit/native-bridge/common/threading/WebTransport.ts") ||
+		isIn("src/platform-kit/instance-pipeline/EntityFunctions.ts")
+	) {
+		return "common"
+	} else if (isIn("src/platform-kit/rest-client") || isIn("src/platform-kit/crypto") || isIn("src/platform-kit/instance-pipeline")) {
+		return "worker"
+	} else if (isIn("src/platform-kit/base")) {
+		return "worker"
+	} else if (isIn("src/app-kit/native-bridge/main")) {
+		return "native-main"
+	} else if (isIn("src/app-kit/native-bridge/worker")) {
+		return "worker"
+	} else if (isIn("src/app-kit/native-bridge/shared")) {
+		return "common"
+	} else if (isIn("src/app-kit/native-bridge/common")) {
+		return "native-common"
+	} else if (isIn("src/platform-kit/network/crypto/error") || isIn("src/platform-kit/network/error")) {
+		return "common-min"
+	} else if (isIn("src/platform-kit/network/crypto/entityCache")) {
+		return "common"
+	} else if (isIn("src/platform-kit/network/crypto/facades/lazy") || isIn("src/platform-kit/network/facades/lazy")) {
+		return "worker-lazy"
+	} else if (
+		isIn("src/platform-kit/network/crypto/facades") ||
+		isIn("src/platform-kit/network/facades/") ||
+		isIn("src/platform-kit/network/offline/migrations")
+	) {
+		return "worker"
+	} else if (isIn("src/platform-kit/network")) {
+		return "worker"
+	} else if (isIn("src/app-kit/local-store")) {
+		return "worker"
+	} else if (isIn("src/entities")) {
+		return "common"
+	} else if (isIn("src/ui/base")) {
+		return "gui-base"
+	} else if (isIn("src/ui")) {
+		return "main"
+	} else {
+		// Put all translations into "translation-code"
+		// Almost like in Rollup example: https://rollupjs.org/guide/en/#outputmanualchunks
+		// This groups chunks but does not rename them for some reason so we do chunkFileNames below
+		const match = /.*[\\|\/]translations[\\|\/](\w+)+\.ts/.exec(moduleId)
+		if (match) {
+			const language = match[1]
+			return "translation-" + language
+		} else if (isIn(`src/applications/mail-app`) || isIn(`src/applications/calendar-app`)) {
+			return "main"
+		} else {
+			throw new Error("I do not know which chunk? for: " + moduleId)
+		}
+	}
+}
+
+function pushToMapEntry(map, key, value) {
+	let entry = []
+	if (map.has(key)) {
+		entry = map.get(key)
+	}
+	entry.push(value)
+	map.set(key, entry)
+}
+
+/**
+ * Creates a plugin which checks that all imports satisfy the rules that are defined in {@link allowedImports}.
+ */
+export function bundleDependencyCheckPlugin() {
+	const illegalImports = new Map()
+	const staticLangImports = new Map()
+	const unknownChunks = []
+
+	const reportErrors = () => {
+		let shouldThrow = false
+		if (illegalImports.size > 0) {
+			console.log("\nIllegal imports:")
+			shouldThrow = true
+			for (const [importer, importees] of Array.from(illegalImports.entries()).filter(([_, importees]) => importees.length > 0)) {
+				console.log(`\n in ${importer}:`)
+				for (const importee of importees) {
+					console.log("\t", importee)
+				}
+			}
+		}
+
+		if (staticLangImports.size > 0) {
+			console.log(shouldThrow ? "\n" : "", "Illegal static translation file dependencies:")
+			shouldThrow = true
+			for (const [importer, importees] of Array.from(staticLangImports.entries()).filter(([_, importees]) => importees.length > 0)) {
+				console.log(`\n in ${importer}:`)
+				for (const importee of importees) {
+					console.log("\t", importee)
+				}
+			}
+		}
+
+		if (unknownChunks.length > 0) {
+			console.log(shouldThrow ? "\n" : "", "Unknown chunks:")
+			shouldThrow = true
+			for (const unknownChunk of unknownChunks) {
+				console.log("\t", unknownChunk)
+			}
+		}
+
+		if (shouldThrow) throw new Error("fix illegal imports or unknown chunks (see above) and rerun")
+	}
+
+	return {
+		name: "bundle-dependency-check",
+		generateBundle(outOpts, bundle) {
+			// retrieves getModule function from plugin context.
+			const getModuleInfo = this.getModuleInfo.bind(this)
+
+			for (const chunk of Object.values(bundle)) {
+				// https://www.rollupjs.org/plugin-development/#generatebundle
+				if (chunk.type === "asset") continue
+				if (!chunk || !chunk.modules) {
+					continue
+				}
+				for (const moduleId of Object.keys(chunk.modules)) {
+					// Its a translation file and they are in their own chunks. We can skip further checks.
+					if (moduleId.includes(path.normalize("src/applications/mail-app/translations"))) {
+						continue
+					}
+					const ownChunk = getChunkName(moduleId, { getModuleInfo })
+					if (!allowedImports[ownChunk]) {
+						unknownChunks.push(`${ownChunk} of ${moduleId}`)
+					}
+
+					for (const importedId of getModuleInfo(moduleId).importedIds) {
+						if (importedId.includes("@tutao")) {
+							throw new Error("path alias not replaces: " + importedId)
+						}
+						// static dependencies on translation files are not allowed
+						if (importedId.includes(path.normalize("src/applications/mail-app/translations"))) {
+							pushToMapEntry(staticLangImports, moduleId, importedId)
+						}
+						const importedChunk = getChunkName(importedId, { getModuleInfo })
+						if (!allowedImports[importedChunk]) {
+							unknownChunks.push(`${importedChunk} of ${importedId}`)
+						}
+						if (ownChunk !== importedChunk && !allowedImports[ownChunk]?.includes(importedChunk)) {
+							pushToMapEntry(illegalImports, `${moduleId} [${ownChunk}]`, `${importedId} [${importedChunk}]`)
+						}
+					}
+				}
+			}
+
+			reportErrors()
+		},
+	}
+}

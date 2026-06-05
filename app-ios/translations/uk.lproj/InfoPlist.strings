@@ -1,0 +1,35 @@
+NSCameraUsageDescription = "Виберіть зображення або відео і додайте його у вкладенні.";
+NSPhotoLibraryUsageDescription = "Додайте картинку з вашої бібліотеки як вкладення.";
+NSMicrophoneUsageDescription = "Використовується під&nbsp;час запису відео у&nbsp;прикріплених файлах.";
+NSContactsUsageDescription = "Tuta може показувати вам пропозиції отримувачів електронної пошти з контактів, збережених на вашому пристрої. Крім того, ви можете дозволити Tuta синхронізувати ваші контакти між вашим пристроєм і вашим обліковим записом Tuta. Якщо ви ввімкнете синхронізацію в налаштуваннях, контакти з вашого пристрою будуть завантажені після надійного шифрування, а ваші контакти Tuta стануть доступними для інших програм.
+
+";
+NSRemindersUsageDescription = "Показувати сповіщення при надходженні нової пошти.";
+TutaoShowCameraAction = "Камера";
+TutaoChoosePhotosAction = "Фотографії";
+TutaoNoPermissionTitle = "Немає доступу";
+TutaoChangePermissionMsg = "Щоб надати доступ, змініть дозволи для&nbsp;цього пристрою.";
+TutaoCancelAction = "Скасувати";
+TutaoSettingsAction = "Налаштування";
+TutaoCalendarAlarmTitle = "Нагадування";
+TutaoScheduleAlarmError = "Не вдалося налаштувати будильник. Оновіть програму.";
+TutaoUnlockCredentialsAction = "Розблокувати облікові дані";
+TutaoPushNewMail = "Отримано новий лист.";
+TutaoDeleteAction = "Видалити";
+TutaoMarkReadAction = "Позначити як прочитане";
+TutaoWidgetOpenAppAction = "Відкрити застосунок";
+TutaoWidgetUnexpectedErrorMsg = "Уупс! Щось пішло не так.";
+TutaoWidgetSendLogsAction = "Надіслати журнали";
+TutaoWidgetNoEventsMsg = "Немає подій";
+TutaoWidgetCredentialsErrorMsg = "Облікові дані відсутні";
+TutaoAccountLabel = "Користувач";
+TutaoCalendarsLabel = "Календарі";
+TutaoNoTitleLabel = "<Нема назви>";
+TutaoWidgetDescription = "Показати найближчі події на сьогодні";
+TutaoDefaultCalendarNameTitle = "Приватний";
+TutaoWidgetMissingConfigurationErrorMsg = "Просимо налаштувати цей віджет";
+TutaoBirthdayEventTitle = "День народження {name}";
+TutaoBirthdayEventAgeTitle = "{age} років";
+TutaoBirthdayCalendarLabel = "Дні народження";
+TutaoAllDayLabel = "Весь день";
+TutaoAttachFilesAction = "Вкласти файли";

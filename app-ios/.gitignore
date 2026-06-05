@@ -1,0 +1,11 @@
+# Generated
+*.generated.swift
+tutanota.xcodeproj
+calendar.xcodeproj
+
+Sqlcipher/generated/*
+
+# Caches
+**/*.xcodeproj/MockingbirdCache/
+
+tutanota/tutanota-web

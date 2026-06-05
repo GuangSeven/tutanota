@@ -1,0 +1,19 @@
+import o from "@tutao/otest"
+import { solvePowChallengeInWorker } from "../../../src/applications/common/subscription/captcha/Captcha.js"
+
+import { createTimelockCaptchaGetOut, TimelockCaptchaGetOut } from "@tutao/entities/sys"
+
+o.spec("SolvePowChallenge", () => {
+	o(
+		"solve valid challenge",
+		browser(async () => {
+			const captchaGetOut: TimelockCaptchaGetOut = createTimelockCaptchaGetOut({
+				base: "2",
+				difficulty: "2",
+				modulus: "2",
+			})
+			const solution = await solvePowChallengeInWorker(captchaGetOut)
+			o(solution.solution).equals(0n)
+		}),
+	)
+})

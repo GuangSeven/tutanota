@@ -1,0 +1,11 @@
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\bin\Debug\net10.0\Tuta.Core.deps.json
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\bin\Debug\net10.0\Tuta.Core.dll
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\bin\Debug\net10.0\Tuta.Core.pdb
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\Tuta.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\Tuta.Core.AssemblyInfoInputs.cache
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\Tuta.Core.AssemblyInfo.cs
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\Tuta.Core.csproj.CoreCompileInputs.cache
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\Tuta.Core.dll
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\refint\Tuta.Core.dll
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\Tuta.Core.pdb
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.Core\obj\Debug\net10.0\ref\Tuta.Core.dll

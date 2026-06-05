@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# run swift formatter on macos
+if [ "$(uname)" = "Darwin" ]; then
+    GIT_ROOT=$(git rev-parse --show-toplevel)
+    pushd "$GIT_ROOT/app-ios" || exit 1 # lint.sh need .swift-format.json in current directory
+	sh -c "$GIT_ROOT/app-ios/lint.sh style:fix" || exit 1
+    sh -c "$GIT_ROOT/app-ios/lint.sh lint:check" || exit 1
+    popd
+fi
+
+# pre-commit hook to check & fix formatting. does not deal with spaces in paths.
+# this runs very quickly, so no need to filter the files
+cargo fmt --all
+
+# prettier is another thing though:
+#     get staged files     exclude deleted files    | only match what prettier matches  | transform newline & whitespace into spaces
+CHG=$(git diff --name-only --diff-filter=d --cached | grep -E ".*\.(ts|js|json|json5)$" | tr [:space:] " ")
+
+if [ "x$CHG" = "x" ]; then
+   echo "no js/ts/json files to format"
+   exit 0
+fi
+
+# run prettier fix on the changed files
+npx prettier -w  $CHG > /dev/null
+# re-add the fixed files
+git add $CHG > /dev/null

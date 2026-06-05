@@ -1,0 +1,8 @@
+{
+	"name": "TaggedSqlValue",
+	"type": "typeref",
+	"location": {
+		"typescript": "@tutao/local-store/types",
+		"kotlin": "de.tutao.tutashared.offline.TaggedSqlValue"
+	}
+}

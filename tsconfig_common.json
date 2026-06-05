@@ -1,0 +1,63 @@
+{
+	"compilerOptions": {
+		"lib": ["es2023", "webworker", "dom"],
+		"allowJs": true,
+		"checkJs": false,
+		"target": "es2022",
+		"module": "es2022",
+		"moduleResolution": "bundler",
+		"skipLibCheck": true,
+		"declaration": true,
+		"noEmitOnError": true,
+		"noErrorTruncation": true,
+		"allowSyntheticDefaultImports": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"esModuleInterop": true,
+		"strict": false,
+		"alwaysStrict": true,
+		"strictBindCallApply": true,
+		"strictFunctionTypes": false,
+		"strictPropertyInitialization": true,
+		"noStrictGenericChecks": false,
+		"strictNullChecks": true,
+		"useUnknownInCatchVariables": false,
+		"types": ["node"],
+		"incremental": true,
+		"paths": {
+			"@tutao/utils": ["./src/platform-kit/utils"],
+			"@tutao/crypto": ["./src/platform-kit/crypto"],
+			"@tutao/crypto/error": ["./src/platform-kit/crypto/error"],
+			"@tutao/usagetests": ["./src/usagetests"],
+			"@tutao/mimimi": ["./src/app-kit/mimimi"],
+			"@tutao/mimimi/types": ["./src/app-kit/mimimi/napi-out/binding.d.ts"],
+			"@tutao/rest-client": ["./src/platform-kit/rest-client"],
+			"@tutao/rest-client/types": ["./src/platform-kit/rest-client/types.ts"],
+			"@tutao/rest-client/error": ["./src/platform-kit/rest-client/error.ts"],
+			"@tutao/app-env": ["./src/platform-kit/app-env"],
+			"@tutao/meta": ["./src/platform-kit/meta"],
+			"@tutao/entities/accounting": ["./src/entities/accounting"],
+			"@tutao/entities/base": ["./src/entities/base"],
+			"@tutao/entities/drive": ["./src/entities/drive"],
+			"@tutao/entities/gossip": ["./src/entities/gossip"],
+			"@tutao/entities/monitor": ["./src/entities/monitor"],
+			"@tutao/entities/storage": ["./src/entities/storage"],
+			"@tutao/entities/sys": ["./src/entities/sys"],
+			"@tutao/entities/tutanota": ["./src/entities/tutanota"],
+			"@tutao/entities/usage": ["./src/entities/usage"],
+			"@tutao/instance-pipeline": ["./src/platform-kit/instance-pipeline"],
+			"@tutao/network/types": ["./src/platform-kit/network/types.ts"],
+			"@tutao/native-bridge/generatedIpc/types": [
+				"./src/app-kit/native-bridge/common/generatedipc/types/index.d.ts"
+			],
+			"@tutao/native-bridge/generatedIpc/enums": [
+				"./src/app-kit/native-bridge/common/generatedipc/types/enums.ts"
+			],
+			"@tutao/native-bridge/generatedIpc/dispatchers": [
+				"./src/app-kit/native-bridge/common/generatedipc/dispatchers/index.ts"
+			]
+		}
+	}
+}

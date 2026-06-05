@@ -1,0 +1,30 @@
+<Window
+    x:Class="Tuta.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d"
+    Title="Tuta for Windows"
+    Width="1200"
+    Height="720">
+    <Grid>
+        <NavigationView
+            x:Name="NavView"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            PaneDisplayMode="Left"
+            SelectionChanged="OnNavSelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Mail" Icon="Mail" Tag="mail" />
+                <NavigationViewItem Content="Compose" Icon="Edit" Tag="compose" />
+                <NavigationViewItem Content="Contacts" Icon="Contact" Tag="contacts" />
+                <NavigationViewItem Content="Calendar" Icon="Calendar" Tag="calendar" />
+            </NavigationView.MenuItems>
+            <NavigationView.Content>
+                <Frame x:Name="ContentFrame" />
+            </NavigationView.Content>
+        </NavigationView>
+    </Grid>
+</Window>

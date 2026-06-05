@@ -1,0 +1,1 @@
+D:\Program\project\tutanota\windows\TutaWinUI\src\Tuta.WinUI\obj\Debug\net8.0-windows10.0.19041.0\Tuta.WinUI.csproj.AssemblyReference.cache

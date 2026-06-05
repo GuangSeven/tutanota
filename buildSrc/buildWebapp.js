@@ -1,0 +1,271 @@
+/**
+	Exports the buildWebapp function that can be used for production builds.
+ */
+import { rollup } from "rollup"
+import terser from "@rollup/plugin-terser"
+import path from "node:path"
+import { nodeResolve } from "@rollup/plugin-node-resolve"
+import commonjs from "@rollup/plugin-commonjs"
+import fs from "fs-extra"
+import { bundleDependencyCheckPlugin, getChunkName, resolveLibs } from "./RollupConfig.js"
+import os from "node:os"
+import * as env from "./env.js"
+import { createHtml } from "./createHtml.js"
+import { domainConfigs } from "./DomainConfigs.js"
+import { visualizer } from "rollup-plugin-visualizer"
+import replace from "@rollup/plugin-replace"
+import { runStep } from "./buildUtils.js"
+import { execSync } from "node:child_process"
+import typescript from "@rollup/plugin-typescript"
+import { buildArgon2, buildLibOqs } from "./buildWasm.js"
+import { appTypeForApp, buildDirForApp, entryPointsForApp } from "./DevBuild.js"
+
+/**
+ * Builds the web app for production.
+ * @param version Version of the app. Will be used for html generation and service worker versioning.
+ * @param stage Deployment for which to build: 'prod' will build for the production system, 'test' for the test system, 'local' will use localhost.
+ * @param host If stage is left undefined, the value provided here will be used to construct the app URL for HTML creation.
+ * @param measure Function that returns the current elapsed build time.
+ * @param minify Boolean. Set to true to perform minification.
+ * @param projectDir Path to the tutanota root directory.
+ * @param app App to build, 'mail' for mail app and 'calendar' for calendar app
+ * @param mobileBuild Whether the current build is for the mobile app.
+ * @returns Nothing meaningful.
+ */
+
+export async function buildWebapp({ version, stage, host, measure, minify, projectDir, app, mobileBuild = false }) {
+	const buildDir = buildDirForApp(app)
+	const resolvedBuildDir = path.resolve(buildDir)
+	const { entry: entryFile, worker: workerFile } = entryPointsForApp(app)
+	const { restUrl, networkDebugging } = (() => {
+		switch (stage) {
+			case "test":
+				return { restUrl: "https://app.test.tuta.com", networkDebugging: false }
+			case "prod":
+				return { restUrl: "https://app.tuta.com", networkDebugging: false }
+			case "local":
+				return { restUrl: "http://" + os.hostname() + ":9000", networkDebugging: false }
+			case "release":
+				return { restUrl: undefined, networkDebugging: false }
+			default:
+				return { restUrl: host, networkDebugging: true }
+		}
+	})()
+
+	console.log("Building app", app)
+
+	await runStep(`Cleaning build dir ${measure()}`, () => {
+		fs.emptyDirSync(buildDir)
+	})
+
+	await runStep(`Bundeling polyfill ${measure()}`, async () => {
+		const polyfillBundle = await rollup({
+			input: ["src/polyfill.js"],
+			plugins: [minify && terser(), commonjs()],
+		})
+		await polyfillBundle.write({
+			sourcemap: false,
+			format: "iife",
+			file: `${buildDir}/polyfill.js`,
+		})
+	})
+
+	await runStep(`Copying images ${measure()}`, () => {
+		fs.copySync(path.join(projectDir, "/resources/images"), path.join(projectDir, `/${buildDir}/images`))
+		fs.copySync(path.join(projectDir, "/resources/favicon"), path.join(projectDir, `${buildDir}/images`))
+		fs.copySync(path.join(projectDir, "/resources/pdf"), path.join(projectDir, `${buildDir}/pdf`))
+		fs.copySync(path.join(projectDir, "/resources/wordlibrary.json"), path.join(projectDir, `${buildDir}/wordlibrary.json`))
+		fs.copySync(path.join(projectDir, "/src/braintree.html"), path.join(projectDir, `/${buildDir}/braintree.html`))
+	})
+
+	await runStep("Build crypto-primitives", async () => {
+		const targetDir = path.resolve(buildDir)
+		execSync(`node make ${targetDir}`, { stdio: "inherit", cwd: "src/platform-kit/crypto" })
+	})
+
+	await runStep("Build mimimi", async () => {
+		execSync("node make --release", { cwd: "src/app-kit/mimimi", stdio: "inherit" })
+	})
+
+	await runStep("Types with emit", () => {
+		execSync(`npm run ${app ?? "mail"}:types`, { stdio: "inherit" })
+	})
+
+	await runStep("Build Argon2 & Oqs", async () => {
+		execSync("make -f Makefile_liboqs clean", { cwd: "libs/webassembly", stdio: "inherit" })
+		execSync("make -f Makefile_argon2 clean", { cwd: "libs/webassembly", stdio: "inherit" })
+		await buildArgon2(resolvedBuildDir)
+		await buildLibOqs(resolvedBuildDir)
+	})
+
+	console.log("started bundling", measure())
+	const bundle = await rollup({
+		input: { app: entryFile, worker: workerFile, "pow-worker": "src/applications/common/api/common/pow-worker.ts" },
+		preserveEntrySignatures: false,
+		perf: true,
+		plugins: [
+			typescript({
+				tsconfig: "./tsconfig-dist-rollup.json",
+				compilerOptions: {
+					outDir: buildDir,
+				},
+			}),
+			resolveLibs(),
+			commonjs({
+				exclude: "src/**",
+			}),
+			minify && terser(),
+			analyzer(projectDir, buildDir),
+			visualizer({ filename: `${buildDir}/stats.html`, gzipSize: true }),
+			bundleDependencyCheckPlugin(),
+			replace({
+				// see AppType in src/applications/common/misc/ClientConstants.ts
+				APP_TYPE: appTypeForApp(app),
+			}),
+			nodeResolve({
+				preferBuiltins: true,
+				resolveOnly: [/^@tutao\/.*$/],
+			}),
+		],
+	})
+
+	console.log("bundling timings: ")
+	for (let [k, v] of Object.entries(bundle.getTimings())) {
+		console.log(k, v[0])
+	}
+	console.log("started writing bundles into", buildDir, measure())
+	const output = await bundle.write({
+		sourcemap: true,
+		format: "esm",
+		dir: buildDir,
+		manualChunks(id, { getModuleInfo, getModuleIds }) {
+			return getChunkName(id, { getModuleInfo })
+		},
+		chunkFileNames: (chunkInfo) => {
+			return "[name]-[hash].js"
+		},
+	})
+	const chunks = output.output.map((c) => c.fileName)
+
+	// we have to use System.import here because bootstrap is not executed until we actually import()
+	// unlike nollup+es format where it just runs on being loaded like you expect
+	await fs.promises.writeFile(
+		`${buildDir}/worker-bootstrap.js`,
+		`import "./polyfill.js"
+import "./worker.js"`,
+	)
+
+	await createHtml(
+		env.create({
+			staticUrl: stage === "release" || stage === "local" ? null : restUrl,
+			version,
+			mode: "Browser",
+			dist: true,
+			domainConfigs,
+			networkDebugging,
+		}),
+		app,
+	)
+	if (stage !== "release") {
+		await createHtml(
+			env.create({
+				staticUrl: restUrl,
+				version,
+				mode: "App",
+				dist: true,
+				domainConfigs,
+				networkDebugging,
+			}),
+			app,
+		)
+	}
+
+	await bundleServiceWorker(chunks, version, minify, buildDir)
+}
+
+/**
+ * @param bundles {string[]}
+ * @param version {string}
+ * @param minify {boolean}
+ * @param buildDir {string}
+ * @returns {Promise<void>}
+ */
+async function bundleServiceWorker(bundles, version, minify, buildDir) {
+	const customDomainFileExclusions = ["index.html", "index.js"]
+	const filesToCache = ["index.js", "index.html", "polyfill.js", "worker-bootstrap.js"]
+		// we always include English
+		// we still cache native-common even though we don't need it because worker has to statically depend on it
+		.concat(
+			bundles
+				.filter(
+					(it) =>
+						it.startsWith("translation-en") ||
+						(!it.startsWith("translation") && !it.startsWith("native-main") && !it.startsWith("SearchInPageOverlay")),
+				)
+				.sort(),
+		)
+		.concat(["images/apple-touch-icon.png", "images/logo-favicon.svg", "images/logo-favicon-192.png", "images/font.ttf"])
+	const swBundle = await rollup({
+		input: ["src/applications/common/serviceworker/sw.ts"],
+		plugins: [
+			typescript({
+				tsconfig: "tsconfig-dist-rollup.json",
+				outDir: buildDir,
+			}),
+			// bundleDependencyCheckPlugin(),
+			minify && terser(),
+			{
+				name: "sw-banner",
+				banner() {
+					return `function filesToCache() { return ${JSON.stringify(filesToCache.sort())} }
+					function version() { return "${version}" }
+					function customDomainCacheExclusions() { return ${JSON.stringify(customDomainFileExclusions)} }`
+				},
+			},
+		],
+	})
+	await swBundle.write({
+		sourcemap: true,
+		format: "iife",
+		file: `${buildDir}/sw.js`,
+	})
+}
+
+/**
+ * A little plugin to:
+ *  - Print out each chunk size and contents
+ *  - Create a graph file with chunk dependencies.
+ */
+function analyzer(projectDir, buildDir) {
+	return {
+		name: "analyze",
+		async generateBundle(outOpts, bundle) {
+			const prefix = projectDir
+			let buffer = "digraph G {\n"
+			buffer += "edge [dir=back]\n"
+
+			for (const [fileName, info] of Object.entries(bundle)) {
+				if (fileName.startsWith("translation")) continue
+				// https://www.rollupjs.org/plugin-development/#generatebundle
+				if (info.type === "asset") continue
+				for (const dep of info.imports) {
+					if (!dep.includes("translation")) {
+						buffer += `"${dep}" -> "${fileName}"\n`
+					}
+				}
+
+				console.log(fileName, "", info.code.length / 1024 + "K")
+				for (const module of Object.keys(info.modules)) {
+					if (module.includes("src/applications/common/api/entities")) {
+						continue
+					}
+					const moduleName = module.startsWith(prefix) ? module.substring(prefix.length) : module
+					console.log("\t" + moduleName)
+				}
+			}
+
+			buffer += "}\n"
+			await fs.writeFile(`${buildDir}/bundles.dot`, buffer)
+		},
+	}
+}

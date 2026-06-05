@@ -1,0 +1,13 @@
+{
+	"extends": "./tsconfig_common.json",
+	"compilerOptions": {
+		"removeComments": false,
+		"declaration": false,
+		// "outDir": "build", -- set from rollupConfig
+		"rootDir": ".",
+		"noEmit": false,
+		"composite": false
+	},
+	"include": ["src/**/*", "libs", "types"],
+	"exclude": ["build"]
+}

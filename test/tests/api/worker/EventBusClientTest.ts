@@ -1,0 +1,336 @@
+import o from "@tutao/otest"
+import { EventBusClient, EventBusListener } from "../../../../src/platform-kit/network/EventBusClient.js"
+import { OperationType, timestampToGeneratedId } from "../../../../src/platform-kit/meta"
+import { DefaultEntityRestCache } from "../../../../src/applications/common/api/worker/rest/DefaultEntityRestCache.js"
+import { OutOfSyncError } from "../../../../src/platform-kit/app-env/OutOfSyncError.js"
+import { matchers, object, verify, when } from "testdouble"
+import { SleepDetector } from "../../../../src/applications/common/api/worker/utils/SleepDetector.js"
+import { UserFacade } from "../../../../src/platform-kit/base/facades/UserFacade"
+import { clientInitializedTypeModelResolver, createTestEntity, instancePipelineFromTypeModelResolver, removeOriginals } from "../../TestUtils.js"
+import { InstancePipeline, TypeModelResolver } from "../../../../src/platform-kit/instance-pipeline"
+import { CryptoFacade } from "../../../../src/platform-kit/base/crypto/CryptoFacade"
+import { ProgrammingError } from "../../../../src/platform-kit/app-env"
+import { Thunk } from "../../../../src/platform-kit/utils"
+import { ConnectMode, WsConnectionState } from "../../../../src/platform-kit/network/Constants"
+import { MailTypeRef } from "@tutao/entities/tutanota"
+
+import {
+	EntityUpdateTypeRef,
+	GroupMembershipTypeRef,
+	User,
+	UserTypeRef,
+	WebsocketCounterData,
+	WebsocketCounterDataTypeRef,
+	WebsocketCounterValueTypeRef,
+	WebsocketEntityData,
+	WebsocketEntityDataTypeRef,
+} from "@tutao/entities/sys"
+import { WebsocketConnectivityListener } from "../../../../src/platform-kit/network/WebsocketConnectivityListener"
+import { LastProcessedEventBatchProvider } from "../../../../src/platform-kit/network/LastProcessedEventBatchProvider"
+import { EntityUpdateData } from "../../../../src/platform-kit/instance-pipeline/utils/EntityUpdateUtils"
+import { GroupType } from "../../../../src/entities/sys/Utils"
+
+export const noPatchesAndInstance: Pick<EntityUpdateData, "instance" | "patches" | "blobInstance"> = {
+	instance: null,
+	patches: null,
+	blobInstance: null,
+}
+o.spec("EventBusClientTest", function () {
+	let ebc: EventBusClient
+	let cacheMock: DefaultEntityRestCache
+	let userMock: UserFacade
+	let socket: WebSocket
+	let user: User
+	let sleepDetector: SleepDetector
+	let listenerMock: EventBusListener
+	let instancePipeline: InstancePipeline
+	let socketFactory: (path: string) => WebSocket
+	let typeModelResolver: TypeModelResolver
+	let cryptoFacadeMock: CryptoFacade
+	let connectivityListenerMock: WebsocketConnectivityListener
+	let lastProcessedEventBatchStorageFacade: LastProcessedEventBatchProvider
+	let now = Date.UTC(2026, 3, 25)
+
+	function initEventBus() {
+		const serverDateProvider = {
+			now() {
+				return now
+			},
+			timeZone(): string {
+				throw new ProgrammingError("not supported")
+			},
+		}
+		ebc = new EventBusClient(
+			connectivityListenerMock,
+			listenerMock,
+			cacheMock,
+			userMock,
+			instancePipeline,
+			socketFactory,
+			sleepDetector,
+			typeModelResolver,
+			cryptoFacadeMock,
+			cryptoFacadeMock,
+			() => Promise.resolve(lastProcessedEventBatchStorageFacade),
+			serverDateProvider,
+			object(),
+		)
+	}
+
+	o.before(function () {
+		// Things that are not defined in node but are read-only in Browser
+		if (!globalThis.isBrowser) {
+			// @ts-ignore
+			WebSocket.CONNECTING = WebSocket.CONNECTING ?? 0
+			// @ts-ignore
+			WebSocket.OPEN = WebSocket.OPEN ?? 1
+			// @ts-ignore
+			WebSocket.CLOSING = WebSocket.CLOSING ?? 2
+			// @ts-ignore
+			WebSocket.CLOSED = WebSocket.CLOSED ?? 3
+		}
+	})
+
+	o.beforeEach(async function () {
+		listenerMock = object()
+		lastProcessedEventBatchStorageFacade = object()
+		cacheMock = object({
+			async entityEventsReceived(events): Promise<ReadonlyArray<EntityUpdateData>> {
+				return events.slice()
+			},
+			async getLastEntityEventBatchForGroup(_groupId: Id): Promise<Id | null> {
+				return null
+			},
+			async recordSyncTime(): Promise<void> {
+				return
+			},
+			async timeSinceLastSyncMs(): Promise<number | null> {
+				return null
+			},
+			async purgeStorage(): Promise<void> {},
+			async putLastEntityEventBatchForGroup(_groupId: Id, _batchId: Id): Promise<void> {
+				return
+			},
+			async isOutOfSync(): Promise<boolean> {
+				return false
+			},
+		} as Partial<DefaultEntityRestCache> as DefaultEntityRestCache)
+
+		user = createTestEntity(UserTypeRef, {
+			userGroup: createTestEntity(GroupMembershipTypeRef, {
+				group: "userGroupId",
+			}),
+		})
+
+		userMock = object("user")
+		when(userMock.getLoggedInUser()).thenReturn(user)
+		when(userMock.isFullyLoggedIn()).thenReturn(true)
+		when(userMock.createAuthHeaders()).thenReturn({})
+
+		socket = object<WebSocket>()
+		sleepDetector = object()
+		socketFactory = () => socket
+
+		typeModelResolver = clientInitializedTypeModelResolver()
+		instancePipeline = instancePipelineFromTypeModelResolver(typeModelResolver)
+		cryptoFacadeMock = object()
+		connectivityListenerMock = object()
+		initEventBus()
+	})
+
+	o.spec("initEntityEvents ", function () {
+		const mailGroupId = "mailGroupId"
+
+		o.beforeEach(function () {
+			user.memberships = [
+				createTestEntity(GroupMembershipTypeRef, {
+					groupType: GroupType.Mail,
+					group: mailGroupId,
+				}),
+			]
+		})
+
+		o("initial connect: when the cache is clean it initializes cache with GENERATED_MIN_ID", async function () {
+			when(lastProcessedEventBatchStorageFacade.getLastEntityEventBatchForGroup(mailGroupId)).thenResolve(null)
+			when(cacheMock.timeSinceLastSyncMs()).thenResolve(null)
+
+			await ebc.connect(ConnectMode.Initial)
+			await socket.onopen?.(new Event("open"))
+
+			verify(cacheMock.recordSyncTime())
+			const FIVE_SECONDS_IN_MILLISECONDS = 5000
+			verify(
+				lastProcessedEventBatchStorageFacade.putLastEntityEventBatchForGroup(mailGroupId, timestampToGeneratedId(now - FIVE_SECONDS_IN_MILLISECONDS)),
+				{ times: 1 },
+			)
+		})
+
+		o("reconnect: when the cache is out of sync with the server, the cache is purged", async function () {
+			when(lastProcessedEventBatchStorageFacade.getLastEntityEventBatchForGroup(mailGroupId)).thenResolve("lastBatchId")
+			// Make initial connection to simulate reconnect (populate lastEntityEventIds
+			await ebc.connect(ConnectMode.Initial)
+			await socket.onopen?.(new Event("open"))
+
+			// Make it think that it's actually a reconnect
+			when(cacheMock.isOutOfSync()).thenResolve(true)
+
+			// initialize events first as well as current time
+			await ebc.connect(ConnectMode.Reconnect)
+			await socket.onopen?.(new Event("open"))
+
+			verify(cacheMock.purgeStorage(), { times: 1 })
+			verify(listenerMock.onError(matchers.isA(OutOfSyncError)))
+		})
+
+		o("initial connect: when the cache is out of sync with the server, the cache is purged", async function () {
+			when(lastProcessedEventBatchStorageFacade.getLastEntityEventBatchForGroup(mailGroupId)).thenResolve("lastBatchId")
+			when(cacheMock.isOutOfSync()).thenResolve(true)
+
+			await ebc.connect(ConnectMode.Reconnect)
+			await socket.onopen?.(new Event("open"))
+
+			verify(cacheMock.purgeStorage(), { times: 1 })
+			verify(listenerMock.onError(matchers.isA(OutOfSyncError)))
+		})
+	})
+
+	o("parallel received event batches are passed sequentially to the entity rest cache", async function () {
+		o.timeout(20000)
+		await ebc.connect(ConnectMode.Initial)
+		await socket.onopen?.(new Event("open"))
+
+		const messageData1 = await createEntityMessage(1)
+		const messageData2 = await createEntityMessage(2)
+
+		const filteredEvents: EntityUpdateData[] = []
+		when(cacheMock.entityEventsReceived(matchers.anything(), matchers.anything(), matchers.anything())).thenResolve(filteredEvents)
+		when(
+			listenerMock.onEntityEventsReceived(matchers.anything(), matchers.anything(), matchers.anything(), matchers.anything(), matchers.anything()),
+		).thenResolve()
+
+		// call twice as if it was received in parallel
+		const p1 = socket.onmessage?.({
+			data: messageData1,
+		} as MessageEvent<string>)
+
+		const p2 = socket.onmessage?.({
+			data: messageData2,
+		} as MessageEvent<string>)
+
+		await Promise.all([p1, p2])
+
+		await ebc.messageQueue
+
+		// Is waiting for cache to process the first event
+		verify(cacheMock.entityEventsReceived(matchers.anything(), matchers.anything(), matchers.anything()), { times: 2 })
+	})
+
+	o("on counter update it send message to the main thread", async function () {
+		const counterUpdate = createCounterData({ mailGroupId: "group1", counterValue: 4, counterId: "list1" })
+
+		await ebc.connect(ConnectMode.Initial)
+
+		await socket.onmessage?.({
+			data: await createCounterMessage(counterUpdate),
+		} as MessageEvent)
+
+		await ebc.messageQueue
+
+		const updateCaptor = matchers.captor()
+		verify(listenerMock.onCounterChanged(updateCaptor.capture()))
+
+		o(updateCaptor.values!.map(removeOriginals)).deepEquals([counterUpdate])
+	})
+
+	o("verify new hash is set when entity updates are processed", async function () {
+		await ebc.connect(ConnectMode.Initial)
+		await socket.onmessage?.({
+			data: await createEntityMessage(1, "newHash"),
+		} as MessageEvent<string>)
+
+		await ebc.messageQueue
+
+		o(typeModelResolver.getServerApplicationTypesModelHash()).equals("newHash")
+	})
+
+	o.spec("sleep detection", function () {
+		o("on connect it starts", async function () {
+			verify(sleepDetector.start(matchers.anything()), { times: 0 })
+
+			await ebc.connect(ConnectMode.Initial)
+			await socket.onopen?.(new Event("open"))
+
+			verify(sleepDetector.start(matchers.anything()), { times: 1 })
+		})
+
+		o("on disconnect it stops", async function () {
+			await ebc.connect(ConnectMode.Initial)
+			await socket.onopen?.(new Event("open"))
+
+			await socket.onclose?.(new Event("close") as CloseEvent) // there's no CloseEvent in node
+			verify(sleepDetector.stop())
+		})
+
+		o("on sleep it reconnects", async function () {
+			let passedCb: Thunk
+			when(sleepDetector.start(matchers.anything())).thenDo((cb: Thunk) => (passedCb = cb))
+			const firstSocket = socket
+
+			await ebc.connect(ConnectMode.Initial)
+			// @ts-ignore
+			// noinspection JSConstantReassignment
+			firstSocket.readyState = WebSocket.OPEN
+			await firstSocket.onopen?.(new Event("open"))
+			verify(socket.close(), { ignoreExtraArgs: true, times: 0 })
+			const secondSocket = (socket = object())
+			// @ts-ignore
+			passedCb()
+
+			verify(firstSocket.close(), { ignoreExtraArgs: true, times: 1 })
+			verify(connectivityListenerMock.updateWebSocketState(WsConnectionState.connecting))
+			await secondSocket.onopen?.(new Event("open"))
+			verify(connectivityListenerMock.updateWebSocketState(WsConnectionState.connected))
+		})
+	})
+
+	async function createEntityMessage(eventBatchId: number, applicationTypesHash: string = "hash"): Promise<string> {
+		const event: WebsocketEntityData = createTestEntity(WebsocketEntityDataTypeRef, {
+			eventBatchId: String(eventBatchId),
+			eventBatchOwner: "ownerId",
+			entityUpdates: [
+				createTestEntity(EntityUpdateTypeRef, {
+					_id: "eventBatchId",
+					application: "tutanota",
+					typeId: MailTypeRef.typeId.toString(),
+					instanceListId: "listId1",
+					instanceId: "id1",
+					operation: OperationType.UPDATE,
+				}),
+			],
+			applicationTypesHash: applicationTypesHash,
+		})
+		const instanceAsData = await instancePipeline.mapAndEncrypt(event._type, event, null)
+		return "entityUpdate;" + JSON.stringify(instanceAsData)
+	}
+
+	type CounterMessageParams = { mailGroupId: Id; counterValue: number; counterId: Id }
+
+	function createCounterData({ mailGroupId, counterValue, counterId }: CounterMessageParams): WebsocketCounterData {
+		return createTestEntity(WebsocketCounterDataTypeRef, {
+			_format: "0",
+			mailGroup: mailGroupId,
+			counterValues: [
+				createTestEntity(WebsocketCounterValueTypeRef, {
+					_id: "counterUpdateId",
+					count: String(counterValue),
+					counterId,
+				}),
+			],
+		})
+	}
+
+	async function createCounterMessage(event: WebsocketCounterData): Promise<string> {
+		const instanceAsData = await instancePipeline.mapAndEncrypt(event._type, event, null)
+		return "unreadCounterUpdate;" + JSON.stringify(instanceAsData)
+	}
+})
