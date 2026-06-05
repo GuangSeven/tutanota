@@ -1,0 +1,38 @@
+name: WinUI3 Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'windows/TutaWinUI/**'
+      - '.github/workflows/winui-build.yml'
+
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  id-token: none
+  issues: none
+  discussions: none
+  packages: none
+  pages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+jobs:
+  build-winui:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      - name: Restore and build
+        run: >-
+          msbuild windows/TutaWinUI/src/Tuta.WinUI/Tuta.WinUI.csproj /restore /p:Configuration=Release /p:Platform=x64 /p:WindowsPackageType=None

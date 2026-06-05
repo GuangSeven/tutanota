@@ -22,7 +22,9 @@ See [TRANSLATING.md](doc/TRANSLATING.md)
 
 ### Building
 
-See [BUILDING.md](doc/BUILDING.md).
+Desktop client: See [BUILDING.md](doc/BUILDING.md).
+
+WinUI3 client: See [BUILDING_WINUI3.md](doc/BUILDING_WINUI3.md).
 
 ### Developing Tuta
 
