@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tuta.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3faedeed866869e4ac15a111a058c6361f460e13")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tuta.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tuta.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

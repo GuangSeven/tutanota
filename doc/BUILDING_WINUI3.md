@@ -1,14 +1,14 @@
-## WinUI3 (Windows App SDK) build via GitHub Actions
+# WinUI3 (Windows App SDK) build via GitHub Actions
 
 Local WinUI3 builds are intentionally not part of the supported flow. Use the GitHub Actions Windows runner instead.
 
-### Run the workflow
+## Run the workflow
 
 1. Open the GitHub Actions tab.
 2. Select "WinUI3 Build".
 3. Click "Run workflow" and choose the branch.
 
-### What it builds
+## What it builds
 
 - Project: windows/TutaWinUI/src/Tuta.WinUI/Tuta.WinUI.csproj
 - Configuration: Release
