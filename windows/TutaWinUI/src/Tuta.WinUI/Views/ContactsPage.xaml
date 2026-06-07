@@ -18,7 +18,7 @@
                 <DataTemplate x:DataType="domain:Contact">
                     <StackPanel Padding="8" Spacing="4">
                         <TextBlock Text="{x:Bind DisplayName}" FontWeight="SemiBold" />
-                        <TextBlock Text="{x:Bind EmailAddresses[0], Mode=OneWay}" Foreground="Gray" />
+                        <TextBlock Text="{x:Bind PrimaryEmail, Mode=OneWay}" Foreground="Gray" />
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
