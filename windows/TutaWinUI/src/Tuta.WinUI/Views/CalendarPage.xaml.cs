@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Tuta.WinUI.ViewModels;
@@ -32,10 +31,9 @@ public sealed partial class CalendarPage : Page
 
     private void OnSelectedDatesChanged(CalendarView sender, CalendarViewSelectedDatesChangedEventArgs args)
     {
-        var date = args.AddedDates.FirstOrDefault();
-        if (date != null)
+        if (args.AddedDates.Count > 0)
         {
-            ViewModel.SelectedDate = date.Value;
+            ViewModel.SelectedDate = args.AddedDates[0];
         }
     }
 }
