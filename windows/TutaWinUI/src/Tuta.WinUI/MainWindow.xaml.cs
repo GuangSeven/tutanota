@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Tuta.WinUI.Views;
+using Windows.Graphics;
 
 namespace Tuta.WinUI;
 
@@ -9,6 +10,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AppWindow.Resize(new SizeInt32(1200, 720));
         NavView.SelectedItem = NavView.MenuItems[0];
         ContentFrame.Navigate(typeof(MailPage));
     }

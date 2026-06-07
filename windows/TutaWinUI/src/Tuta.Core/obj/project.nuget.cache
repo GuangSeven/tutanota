@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "OvK9JHFEkDk=",
+  "dgSpecHash": "BlEgNl6RIaQ=",
   "success": true,
-  "projectFilePath": "D:\\Program\\project\\tutanota\\windows\\TutaWinUI\\src\\Tuta.Core\\Tuta.Core.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "/tmp/workspace/GuangSeven/tutanota/windows/TutaWinUI/src/Tuta.Core/Tuta.Core.csproj",
+  "expectedPackageFiles": [
+    "/tmp/codeql-scratch-d045e90980489c43/dbs/csharp/working/packages/microsoft.netcore.app.ref/8.0.27/microsoft.netcore.app.ref.8.0.27.nupkg.sha512",
+    "/tmp/codeql-scratch-d045e90980489c43/dbs/csharp/working/packages/microsoft.aspnetcore.app.ref/8.0.27/microsoft.aspnetcore.app.ref.8.0.27.nupkg.sha512"
+  ],
   "logs": []
 }

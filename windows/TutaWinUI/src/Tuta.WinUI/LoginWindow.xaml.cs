@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Tuta.WinUI.Views;
+using Windows.Graphics;
 
 namespace Tuta.WinUI;
 
@@ -8,6 +9,7 @@ public sealed partial class LoginWindow : Window
     public LoginWindow()
     {
         InitializeComponent();
+        AppWindow.Resize(new SizeInt32(420, 520));
         RootFrame.Navigate(typeof(LoginPage));
         RootFrame.Navigated += OnNavigated;
     }

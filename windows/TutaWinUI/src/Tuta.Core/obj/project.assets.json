@@ -8,19 +8,19 @@
     "net8.0": []
   },
   "packageFolders": {
-    "C:\\Users\\24004\\.nuget\\packages\\": {}
+    "/tmp/codeql-scratch-d045e90980489c43/dbs/csharp/working/packages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Program\\project\\tutanota\\windows\\TutaWinUI\\src\\Tuta.Core\\Tuta.Core.csproj",
+      "projectUniqueName": "/tmp/workspace/GuangSeven/tutanota/windows/TutaWinUI/src/Tuta.Core/Tuta.Core.csproj",
       "projectName": "Tuta.Core",
-      "projectPath": "D:\\Program\\project\\tutanota\\windows\\TutaWinUI\\src\\Tuta.Core\\Tuta.Core.csproj",
-      "packagesPath": "C:\\Users\\24004\\.nuget\\packages\\",
-      "outputPath": "D:\\Program\\project\\tutanota\\windows\\TutaWinUI\\src\\Tuta.Core\\obj\\",
+      "projectPath": "/tmp/workspace/GuangSeven/tutanota/windows/TutaWinUI/src/Tuta.Core/Tuta.Core.csproj",
+      "packagesPath": "/tmp/codeql-scratch-d045e90980489c43/dbs/csharp/working/packages",
+      "outputPath": "/tmp/workspace/GuangSeven/tutanota/windows/TutaWinUI/src/Tuta.Core/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\24004\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "/home/runner/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -62,12 +62,22 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.27, 8.0.27]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.27, 8.0.27]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.300/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
