@@ -1,4 +1,4 @@
-name: WinUI3 Build
+name: Windows build
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ permissions:
   statuses: none
 
 jobs:
-  build-winui:
+  build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
@@ -36,3 +36,9 @@ jobs:
       - name: Restore and build
         run: >-
           msbuild windows/TutaWinUI/src/Tuta.WinUI/Tuta.WinUI.csproj /restore /p:Configuration=Release /p:Platform=x64 /p:WindowsPackageType=None
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: windows/TutaWinUI/src/Tuta.WinUI/bin/x64/Release/
+          if-no-files-found: warn
