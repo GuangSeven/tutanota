@@ -6,9 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d"
-    Title="Tuta for Windows"
-    Width="1200"
-    Height="720">
+    Title="Tuta for Windows">
     <Grid>
         <NavigationView
             x:Name="NavView"
